@@ -2,29 +2,28 @@
 
 import os, json, sys
 
+import filer, parser
+
 class Cursor:
 	def _load(self, db):
 		if not(os.path.exists(db) and os.path.isdir(db)):
 			#create the directory for the database first
 			try:
-				os.mkdir(path)
+				os.mkdir(db)
 			except OSError:
 				raise OSError("Initialization of db {} failed", db)
-			else:
-				print("Initialization of db {} succeeded", db)
-		os.chdir(db)
+			print("Initialization of db {} succeeded", db)
+#		os.chdir(db)
 		self.root = db
 		self.subsets = [file for file in os.listdir(self.root) if os.path.isdir(file)]
 		self.subfiles = [file for file in os.listdir(self.root) if os.path.isfile(file)]
 		self.nodedata = {}
+		self.cFiler = filer.Filer(db)
 		try:
-			with open(self.root + '/.tinydat.json', 'r') as rd:
-				self.nodedata = json.load(rd)
-				rd.close()
-		except OSError:
-			with open(self.root + '/.tinydat.json', 'w') as wr:
-				json.dump({}, wr)
-				wr.close()
+			self.nodedata = self.cFiler.read_file('.tinydat.json')
+		except IOError:
+			self.cFiler.create_file('.tinydat.json', self.nodedata)
+		self.cParser = parser.Parser(db)
 	def __init__(self, db):
 		self._load(db)
 	def list_sets(self):
@@ -38,3 +37,9 @@ class Cursor:
 			raise OSError("Child spawn failed: " + e.message)
 	def reload(self):
 		self._load(self.root)
+	def leaf(self, leaf):
+		if leaf not in self.subfiles:
+			cFiler.create_file(leaf, [])
+			print("leaf {} created ({})".format(leaf, self.root))
+		self._load(self.root)
+		return parser.Parser(self.root, leaf)
